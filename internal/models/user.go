@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// this struct is basically saying "Hey GORM, whenever you interact with the users table,
+// map it to this Go object"
 type User struct {
 	ID        uuid.UUID `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
 	Name      string    `json:"name" gorm:"not null"`
