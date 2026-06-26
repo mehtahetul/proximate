@@ -2,6 +2,7 @@ package routes
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mehtahetul/proximate/internal/handlers"
@@ -15,6 +16,7 @@ func RegisterRoutes(r *gin.Engine) {
 
 	// Public routes
 	auth := r.Group("/auth")
+	auth.Use(middleware.RateLimit("auth", 10, time.Minute))
 	{
 		auth.POST("/register", handlers.Register)
 		auth.POST("/login", handlers.Login)
@@ -22,11 +24,17 @@ func RegisterRoutes(r *gin.Engine) {
 		auth.POST("/logout", handlers.Logout)
 	}
 
-	// Protected routes — middleware runs first on every route in this group
+	// Protected routes
 	protected := r.Group("/")
 	protected.Use(middleware.RequireAuth)
 	{
-		protected.PUT("/location", handlers.UpdateLocation)
-		protected.GET("/nearby", handlers.GetNearby)
+		protected.PUT("/location",
+			middleware.RateLimit("location", 30, time.Minute),
+			handlers.UpdateLocation,
+		)
+		protected.GET("/nearby",
+			middleware.RateLimit("nearby", 30, time.Minute),
+			handlers.GetNearby,
+		)
 	}
 }

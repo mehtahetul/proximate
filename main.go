@@ -15,6 +15,7 @@ func main() {
 	}
 
 	db.Connect()
+	db.ConnectRedis()
 
 	r := gin.Default()
 	routes.RegisterRoutes(r)

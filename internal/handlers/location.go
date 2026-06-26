@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mehtahetul/proximate/internal/cache"
 	"github.com/mehtahetul/proximate/internal/db"
 	"github.com/mehtahetul/proximate/internal/repository"
 )
@@ -34,24 +36,20 @@ func UpdateLocation(c *gin.Context) {
 }
 
 // GetNearby — GET /nearby?radius=500
+// GetNearby — GET /nearby?radius=500&lat=12.34&lng=56.78
 func GetNearby(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 
-	// radius is a query parameter — default to 500 metres if not provided
 	radiusStr := c.DefaultQuery("radius", "500")
 	radius, err := strconv.ParseFloat(radiusStr, 64)
 	if err != nil || radius <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid radius"})
 		return
 	}
-
-	// Cap radius at 50km — prevent someone querying the entire world
 	if radius > 50000 {
 		radius = 50000
 	}
 
-	// We need the current user's location to search from
-	// Read it from query params for now — user passes their own coords
 	latStr := c.Query("lat")
 	lngStr := c.Query("lng")
 	if latStr == "" || lngStr == "" {
@@ -70,14 +68,30 @@ func GetNearby(c *gin.Context) {
 		return
 	}
 
+	// --- Cache lookup ---
+	cacheKey := cache.NearbyKey(userID, lat, lng, radius)
+	if cached, ok := cache.GetNearby(c.Request.Context(), db.RedisClient, cacheKey); ok {
+		c.Header("X-Cache", "HIT")
+		c.Data(http.StatusOK, "application/json", []byte(cached))
+		return
+	}
+
+	// --- Cache miss: query the database ---
 	users, err := repository.FindNearby(db.DB, lat, lng, radius, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch nearby users"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"users": users,
-		"count": len(users),
-	})
+	// Serialize to JSON, store in Redis, return to client
+	response := gin.H{"users": users, "count": len(users)}
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not serialize response"})
+		return
+	}
+
+	cache.SetNearby(c.Request.Context(), db.RedisClient, cacheKey, string(jsonBytes))
+	c.Header("X-Cache", "MISS")
+	c.Data(http.StatusOK, "application/json", jsonBytes)
 }
