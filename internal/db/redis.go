@@ -22,4 +22,5 @@ func ConnectRedis() {
 	}
 
 	log.Println("Redis connected successfully")
+	//just aamaj to push to git hhaha
 }
