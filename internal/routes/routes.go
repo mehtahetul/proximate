@@ -36,5 +36,9 @@ func RegisterRoutes(r *gin.Engine) {
 			middleware.RateLimit("nearby", 30, time.Minute),
 			handlers.GetNearby,
 		)
+		protected.POST("/profile", handlers.CreateProfile)
+		protected.PUT("/profile", handlers.UpdateProfile)
+		protected.GET("/profile/me", handlers.GetMyProfile)
+		protected.GET("/profile/:id", handlers.GetProfileByID)
 	}
 }

@@ -23,24 +23,29 @@ func FindNearby(db *gorm.DB, lat, lng float64, radiusMetres float64, excludeUser
 
 	err := db.Raw(`
 		SELECT
-			id,
-			name,
-			bio,
-			skills,
+			u.id,
+			p.name,
+			p.headline,
+			p.company_name,
+			p.bio,
+			p.skills,
+			p.linkedin_url,
+			p.profile_photo_url,
 			ST_Distance(
-				ST_MakePoint(longitude, latitude)::geography,
+				ST_MakePoint(u.longitude, u.latitude)::geography,
 				ST_MakePoint(?, ?)::geography
 			) AS distance_metres
-		FROM users
-		WHERE is_visible = true
-		  AND id != ?
-		  AND latitude IS NOT NULL
-		  AND longitude IS NOT NULL
+		FROM users u
+		INNER JOIN profiles p ON p.user_id = u.id
+		WHERE u.is_visible = true
+		  AND u.id != ?
+		  AND u.latitude IS NOT NULL
+		  AND u.longitude IS NOT NULL
 		  AND ST_DWithin(
-		        ST_MakePoint(longitude, latitude)::geography,
-		        ST_MakePoint(?, ?)::geography,
-		        ?
-		      )
+				ST_MakePoint(u.longitude, u.latitude)::geography,
+				ST_MakePoint(?, ?)::geography,
+				?
+			)
 		ORDER BY distance_metres ASC
 	`, lng, lat, excludeUserID, lng, lat, radiusMetres).Scan(&users).Error
 
