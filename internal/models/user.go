@@ -49,7 +49,7 @@ type Profile struct {
 	CompanyName     string    `json:"company_name" gorm:"not null"`
 	Bio             string    `json:"bio"`
 	Skills          []string  `json:"skills" gorm:"type:text[]"`
-	LinkedInURL     string    `json:"linkedin_url,omitempty"`
+	LinkedInURL     string    `json:"linkedin_url,omitempty" gorm:"column:linkedin_url"`
 	ProfilePhotoURL string    `json:"profile_photo_url,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
