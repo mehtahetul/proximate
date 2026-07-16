@@ -26,7 +26,7 @@ const (
 // models.NearbyUser (which represents a single row) so the "page of
 // results" concept doesn't leak into the per-user model.
 type NearbyResponse struct {
-	Users      []models.NearbyUser `json:"users"`
+	Users      []NearbyUserResponse `json:"users"`
 	Count      int                 `json:"count"`
 	NextCursor string              `json:"next_cursor,omitempty"`
 	HasMore    bool                `json:"has_more"`
@@ -171,16 +171,31 @@ func GetNearby(c *gin.Context) {
 		cache.SetNearby(c.Request.Context(), db.RedisClient, cacheKey, string(jsonBytes))
 		c.Header("X-Cache", "MISS")
 	}
-	for i := range allUsers {
-		allUsers[i].DistanceBucket = models.BucketDistance(allUsers[i].DistanceMetres)
-	}
 
 	// --- Paginate in Go: find where the cursor leaves off, then slice ---
 	page, nextCursor, hasMore := paginateNearby(allUsers, cursor, limit)
 
+	// Convert each internal NearbyUser (exact distance, used for sort/cursor)
+	// into the client-facing shape (bucketed distance) at the last moment —
+	// cache, sort, and pagination logic above never see the bucket.
+	responseUsers := make([]NearbyUserResponse, len(page))
+	for i, u := range page {
+		responseUsers[i] = NearbyUserResponse{
+			ID:              u.ID,
+			Name:            u.Name,
+			Headline:        u.Headline,
+			CompanyName:     u.CompanyName,
+			Bio:             u.Bio,
+			Skills:          u.Skills,
+			LinkedInURL:     u.LinkedInURL,
+			ProfilePhotoURL: u.ProfilePhotoURL,
+			DistanceBucket:  models.BucketDistance(u.DistanceMetres),
+		}
+	}
+
 	c.JSON(http.StatusOK, NearbyResponse{
-		Users:      page,
-		Count:      len(page),
+		Users:      responseUsers,
+		Count:      len(responseUsers),
 		NextCursor: nextCursor,
 		HasMore:    hasMore,
 	})

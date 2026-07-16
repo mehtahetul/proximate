@@ -1,9 +1,8 @@
 package models
 
 // BucketDistance converts an exact distance in metres into a coarse,
-// human-friendly label. This is what clients actually see from /nearby —
-// the exact DistanceMetres value is kept internal for sorting and cursor
-// pagination, never exposed directly.
+// human-friendly label shown to clients. The exact float is never exposed —
+// only used internally for sorting and cursor pagination.
 func BucketDistance(metres float64) string {
 	switch {
 	case metres <= 100:
