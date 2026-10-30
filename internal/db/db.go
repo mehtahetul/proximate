@@ -1,8 +1,8 @@
 package db
 
 import (
-	"fmt"
 	"log"
+	"net/url"
 	"os"
 
 	"gorm.io/driver/postgres"
@@ -11,18 +11,23 @@ import (
 
 var DB *gorm.DB
 
-func Connect() {
-	dsn := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%s/%s?sslmode=disable",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
-	)
+// databaseURL builds the Postgres connection URL from .env values.
+// url.UserPassword escapes special characters in the password, so a
+// password containing '@' or '/' can't break the URL.
+func databaseURL(scheme string) string {
+	u := url.URL{
+		Scheme:   scheme,
+		User:     url.UserPassword(os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD")),
+		Host:     os.Getenv("DB_HOST") + ":" + os.Getenv("DB_PORT"),
+		Path:     os.Getenv("DB_NAME"),
+		RawQuery: "sslmode=disable",
+	}
+	return u.String()
+}
 
+func Connect() {
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB, err = gorm.Open(postgres.Open(databaseURL("postgres")), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

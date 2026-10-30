@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/mehtahetul/proximate/internal/db"
 	"github.com/mehtahetul/proximate/internal/models"
 	"gorm.io/gorm"
@@ -54,7 +55,7 @@ func CreateProfile(c *gin.Context) {
 		Headline:        req.Headline,
 		CompanyName:     req.CompanyName,
 		Bio:             req.Bio,
-		Skills:          req.Skills,
+		Skills:          pq.StringArray(req.Skills),
 		LinkedInURL:     req.LinkedInURL,
 		ProfilePhotoURL: req.ProfilePhotoURL,
 	}
@@ -115,7 +116,7 @@ func UpdateProfile(c *gin.Context) {
 		updates["bio"] = *req.Bio
 	}
 	if req.Skills != nil {
-		updates["skills"] = *req.Skills
+		updates["skills"] = pq.StringArray(*req.Skills)
 	}
 	if req.LinkedInURL != nil {
 		updates["linkedin_url"] = *req.LinkedInURL

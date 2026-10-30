@@ -1,3 +1,4 @@
 .env
 *.env
-proximate.DS_Store
+.DS_Store
+/proximate

@@ -6,12 +6,12 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/mehtahetul/proximate/internal/cache"
 	"github.com/mehtahetul/proximate/internal/db"
 	"github.com/mehtahetul/proximate/internal/models"
 	"github.com/mehtahetul/proximate/internal/pagination"
 	"github.com/mehtahetul/proximate/internal/repository"
-	"github.com/google/uuid"
 )
 
 // defaultPageSize and maxPageSize bound how many results go out per page.
@@ -27,9 +27,9 @@ const (
 // results" concept doesn't leak into the per-user model.
 type NearbyResponse struct {
 	Users      []NearbyUserResponse `json:"users"`
-	Count      int                 `json:"count"`
-	NextCursor string              `json:"next_cursor,omitempty"`
-	HasMore    bool                `json:"has_more"`
+	Count      int                  `json:"count"`
+	NextCursor string               `json:"next_cursor,omitempty"`
+	HasMore    bool                 `json:"has_more"`
 }
 
 // NearbyUserResponse is the client-facing shape for a single nearby user —
@@ -44,7 +44,7 @@ type NearbyUserResponse struct {
 	Skills          []string  `json:"skills"`
 	LinkedInURL     string    `json:"linkedin_url,omitempty"`
 	ProfilePhotoURL string    `json:"profile_photo_url,omitempty"`
-	DistanceBucket  string    `json:"distance_metres"`
+	DistanceBucket  string    `json:"distance_bucket"`
 }
 
 // UpdateLocation — PUT /location
